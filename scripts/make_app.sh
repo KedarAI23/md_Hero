@@ -3,15 +3,19 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 CONFIGURATION="${1:-release}"
+VERSION="${2:-2.0.0-beta.1}"
+BUILD_NUMBER="${BUILD_NUMBER:-1}"
+
 swift build -c "$CONFIGURATION"
 
 BINARY=".build/$CONFIGURATION/Pare"
 APP="build/md_Hero.app"
 
+rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS"
 cp "$BINARY" "$APP/Contents/MacOS/md_Hero"
 
-cat > "$APP/Contents/Info.plist" <<'PLIST'
+cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -23,9 +27,9 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
     <key>CFBundleIdentifier</key>
     <string>com.mdhero.app</string>
     <key>CFBundleVersion</key>
-    <string>1.0</string>
+    <string>$BUILD_NUMBER</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.0</string>
+    <string>$VERSION</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleExecutable</key>
@@ -42,6 +46,8 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 </plist>
 PLIST
 
-codesign --force --sign - "$APP" 2>/dev/null || true
+# Ad-hoc signing is sufficient for a local beta install; this is not Developer ID notarisation.
+codesign --force --deep --sign - "$APP"
+codesign --verify --deep --strict "$APP"
 
-echo "Built $APP — run with: open build/md_Hero.app"
+echo "Built and verified $APP ($VERSION, build $BUILD_NUMBER)"
