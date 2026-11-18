@@ -38,7 +38,8 @@ public enum PdfParser {
 
         var frequency: [String: Int] = [:]
         for lines in pageLines {
-            for line in lines where !line.isEmpty {
+            guard let first = lines.first, let last = lines.last else { continue }
+            for line in [first, last] {
                 let key = normalize(line)
                 if !key.isEmpty {
                     frequency[key, default: 0] += 1
@@ -46,7 +47,7 @@ public enum PdfParser {
             }
         }
 
-        let threshold = max(2, Int(Double(pageCount) * 0.5))
+        let threshold = max(2, Int((Double(pageCount) * 0.5).rounded(.up)))
         let repeatedKeys = Set(
             frequency
                 .filter { $0.value >= threshold }
@@ -54,9 +55,15 @@ public enum PdfParser {
         )
         guard !repeatedKeys.isEmpty else { return pageLines }
 
-        return pageLines.map { lines in
-            lines.filter { line in
-                line.isEmpty || !repeatedKeys.contains(normalize(line))
+        return pageLines.map { lines -> [String] in
+            guard let lastIndex = lines.indices.last else { return lines }
+            return lines.enumerated().compactMap { index, line -> String? in
+                if index == 0 || index == lastIndex,
+                   !line.isEmpty,
+                   repeatedKeys.contains(normalize(line)) {
+                    return nil
+                }
+                return line
             }
         }
     }

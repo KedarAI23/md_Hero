@@ -91,7 +91,7 @@ final class PareTests: XCTestCase {
         let rendered = MarkdownRenderer.render([
             .table(rows: [["A", "B"], ["1", "2"]])
         ])
-        let renderedLines = rendered.split(separator: "\n").map(String.init)
+        let renderedLines = rendered.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
         XCTAssertEqual(renderedLines, [
             "| A | B |",
             "| --- | --- |",
