@@ -44,4 +44,4 @@ PLIST
 
 codesign --force --sign - "$APP" 2>/dev/null || true
 
-echo "Built $APP — run with: open build/Pare.app"
+echo "Built $APP — run with: open build/md_Hero.app"
