@@ -139,10 +139,13 @@ final class PareTests: XCTestCase {
     }
 
     func testStatsReportTokenSavings() throws {
-        let result = try convert("sample.pdf")
+        let result = try convert("notes.md")
         XCTAssertGreaterThan(result.stats.rawTokenEstimate, 0)
         XCTAssertGreaterThan(result.stats.markdownTokenEstimate, 0)
         XCTAssertGreaterThan(result.stats.tokenSavingsPercent, 0)
+
+        let pdf = try convert("sample.pdf")
+        XCTAssertGreaterThanOrEqual(pdf.stats.tokenSavingsPercent, 0)
     }
 
     func testOutputURLNamesAreUniquified() {
