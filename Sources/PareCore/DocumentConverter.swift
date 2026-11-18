@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 
 public enum DocumentConverter {
@@ -14,7 +15,11 @@ public enum DocumentConverter {
             let data = try read(url)
             return try finalize(try OdtParser.parse(data: data), options: options)
         case "pdf":
-            let blocks = try PdfParser.parse(url: url, stripHeadersFooters: options.stripHeadersFooters)
+            let blocks = try PdfParser.parse(
+                url: url,
+                stripHeadersFooters: options.stripHeadersFooters,
+                performOCR: options.performOCR
+            )
             return try finalize(blocks, options: options)
         case "rtf":
             let data = try read(url)
@@ -55,9 +60,59 @@ public enum DocumentConverter {
         try result.markdown.write(to: url, atomically: true, encoding: .utf8)
     }
 
+    public static func writeManifest(
+        for result: ConversionResult,
+        sourceURL: URL,
+        markdownURL: URL,
+        options: ConvertOptions
+    ) throws {
+        let sourceData = try Data(contentsOf: sourceURL)
+        let digest = SHA256.hash(data: sourceData)
+            .map { String(format: "%02x", $0) }
+            .joined()
+
+        let manifest = ConversionManifest(
+            schemaVersion: 1,
+            appVersion: "2.0.0-beta.1",
+            sourceFilename: sourceURL.lastPathComponent,
+            sourceFormat: sourceURL.pathExtension.lowercased(),
+            sourceSHA256: digest,
+            convertedAt: ISO8601DateFormatter().string(from: Date()),
+            markdownFilename: markdownURL.lastPathComponent,
+            statistics: result.stats,
+            options: options,
+            knownLimitations: [
+                "Token counts are heuristic estimates based on approximately four characters per token.",
+                "Structured parser-level extraction warnings are not yet available in this beta.",
+                "PDF OCR is attempted on pages with no extractable text; mixed text-and-image pages are not OCR-enhanced."
+            ]
+        )
+
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        let data = try encoder.encode(manifest)
+        let manifestURL = markdownURL
+            .deletingPathExtension()
+            .appendingPathExtension("manifest.json")
+        try data.write(to: manifestURL, options: .atomic)
+    }
+
+    private struct ConversionManifest: Encodable {
+        let schemaVersion: Int
+        let appVersion: String
+        let sourceFilename: String
+        let sourceFormat: String
+        let sourceSHA256: String
+        let convertedAt: String
+        let markdownFilename: String
+        let statistics: ConversionStats
+        let options: ConvertOptions
+        let knownLimitations: [String]
+    }
+
     private static func finalize(_ blocks: [MarkdownBlock], options: ConvertOptions) throws -> ConversionResult {
         guard !blocks.isEmpty else {
-            throw ConversionError.parseFailed("No extractable text content found (scanned or image-only documents need OCR)")
+            throw ConversionError.parseFailed("No extractable content found")
         }
         let markdown = Cleaner.clean(MarkdownRenderer.render(blocks), options: options)
         guard !markdown.isEmpty else {
