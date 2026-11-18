@@ -79,12 +79,24 @@ final class PareTests: XCTestCase {
         XCTAssertTrue(result.markdown.contains("documentation"))
     }
 
-    func testPdfConversionStripsRepeatingPageFurniture() throws {
+    func testPdfConversionStripsRepeatingPageFurnitureAndPreservesPageMarkers() throws {
         let result = try convert("sample.pdf")
         XCTAssertFalse(result.markdown.contains("Confidential"))
-        XCTAssertFalse(result.markdown.range(of: "Page \\d", options: .regularExpression) != nil)
+        XCTAssertTrue(result.markdown.contains("## Page 1"))
         XCTAssertTrue(result.markdown.contains("Quarterly Report"))
         XCTAssertTrue(result.markdown.contains("enterprise renewals"))
+    }
+
+    func testPdfParserCanDisableOCR() throws {
+        let blocks = try PdfParser.parse(
+            url: fixtureURL("sample.pdf"),
+            stripHeadersFooters: true,
+            performOCR: false
+        )
+        XCTAssertTrue(blocks.contains {
+            if case .heading(level: 2, text: "Page 1") = $0 { return true }
+            return false
+        })
     }
 
     func testRendererProducesGfmTable() {
@@ -112,10 +124,18 @@ final class PareTests: XCTestCase {
         XCTAssertTrue(rendered.contains("1. third"))
     }
 
-    func testCleanerRemovesImagesAndCollapsesBlankLines() {
+    func testCleanerKeepsImagesByDefault() {
+        let cleaned = Cleaner.clean(
+            "Before\n\n![figure](figure.png)\n\nAfter",
+            options: ConvertOptions()
+        )
+        XCTAssertTrue(cleaned.contains("![figure](figure.png)"))
+    }
+
+    func testCleanerRemovesImagesOnlyWhenRequested() {
         let cleaned = Cleaner.clean(
             "Top\n\n![](x.png)\n\n\n\n\nBottom   \n",
-            options: ConvertOptions()
+            options: ConvertOptions(removeImages: true)
         )
         XCTAssertFalse(cleaned.contains("x.png"))
         XCTAssertFalse(cleaned.contains("\n\n\n"))
