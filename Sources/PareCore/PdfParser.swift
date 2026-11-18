@@ -1,8 +1,14 @@
+import AppKit
 import Foundation
 import PDFKit
+import Vision
 
 public enum PdfParser {
-    public static func parse(url: URL, stripHeadersFooters: Bool) throws -> [MarkdownBlock] {
+    public static func parse(
+        url: URL,
+        stripHeadersFooters: Bool,
+        performOCR: Bool = true
+    ) throws -> [MarkdownBlock] {
         guard let document = PDFDocument(url: url) else {
             throw ConversionError.unreadable("Not a readable PDF")
         }
@@ -12,14 +18,24 @@ public enum PdfParser {
 
         var pageLines: [[String]] = []
         for pageIndex in 0..<document.pageCount {
-            guard let page = document.page(at: pageIndex), let text = page.string else {
+            guard let page = document.page(at: pageIndex) else {
                 pageLines.append([])
                 continue
             }
+
+            let extractedText = page.string?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let pageText: String
+            if extractedText.isEmpty && performOCR {
+                pageText = recognizeText(on: page) ?? ""
+            } else {
+                pageText = extractedText
+            }
+
             pageLines.append(
-                text
+                pageText
                     .components(separatedBy: .newlines)
                     .map { $0.trimmingCharacters(in: .whitespaces) }
+                    .filter { !$0.isEmpty }
             )
         }
 
@@ -27,9 +43,44 @@ public enum PdfParser {
             pageLines = Self.stripRepeatingLines(pageLines)
         }
 
-        let lines = pageLines.flatMap { $0 }
-            .filter { !Self.isLonePageNumber($0) }
-        return ProseStructure.linesToBlocks(lines)
+        var blocks: [MarkdownBlock] = []
+        for (index, lines) in pageLines.enumerated() {
+            blocks.append(.heading(level: 2, text: "Page \(index + 1)"))
+            let visibleLines = lines.filter { !Self.isLonePageNumber($0) }
+            if visibleLines.isEmpty {
+                blocks.append(.paragraph("[No extractable text detected on this page. It may be blank, scanned, or protected.]"))
+            } else {
+                blocks.append(contentsOf: ProseStructure.linesToBlocks(visibleLines))
+            }
+        }
+        return blocks
+    }
+
+    private static func recognizeText(on page: PDFPage) -> String? {
+        let thumbnail = page.thumbnail(of: CGSize(width: 1800, height: 2400), for: .mediaBox)
+        var proposedRect = CGRect(origin: .zero, size: thumbnail.size)
+        guard let cgImage = thumbnail.cgImage(
+            forProposedRect: &proposedRect,
+            context: nil,
+            hints: nil
+        ) else {
+            return nil
+        }
+
+        let request = VNRecognizeTextRequest()
+        request.recognitionLevel = .accurate
+        request.usesLanguageCorrection = true
+
+        do {
+            try VNImageRequestHandler(cgImage: cgImage, options: [:]).perform([request])
+        } catch {
+            return nil
+        }
+
+        let recognized = request.results?
+            .compactMap { $0.topCandidates(1).first?.string }
+            .filter { !$0.isEmpty } ?? []
+        return recognized.isEmpty ? nil : recognized.joined(separator: "\n")
     }
 
     static func stripRepeatingLines(_ pageLines: [[String]]) -> [[String]] {
