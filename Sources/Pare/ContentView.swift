@@ -83,6 +83,7 @@ struct ContentView: View {
         }
     }
 
+    @ViewBuilder
     private var optionsRow: some View {
         HStack(spacing: 10) {
             Button {
@@ -137,7 +138,7 @@ struct ContentView: View {
         .font(.callout)
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 8).fill(Color(nsColor: .ControlBackgroundColor)))
+        .background(RoundedRectangle(cornerRadius: 8).fill(Color(nsColor: .controlBackgroundColor)))
     }
 
     private var fileList: some View {
@@ -210,6 +211,7 @@ struct ContentView: View {
         }
     }
 
+    @ViewBuilder
     private func statusIcon(for item: QueueModel.Item) -> some View {
         switch item.status {
         case .queued:
