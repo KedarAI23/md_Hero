@@ -4,6 +4,21 @@ A native macOS app (SwiftUI) that converts documents into clean, token-light Mar
 
 **Documents in → Markdown out, with as few wasted tokens as possible.**
 
+## Install (DMG)
+
+The easiest way to beta test is the prebuilt DMG from CI:
+
+1. Open the repo's **Actions → Build DMG** run (or the latest **Releases** page) and download `Pare-1.0.dmg`.
+   - On a tag push (`v*`) the DMG is attached to a GitHub Release automatically; any manual run (**workflow_dispatch**) also publishes it as a downloadable build artifact.
+2. Open the DMG and drag **Pare.app** to the **Applications** shortcut inside it.
+3. First launch: the app is ad-hoc signed, so macOS Gatekeeper may ask for confirmation — right-click the app and choose **Open** once, or allow it in System Settings → Privacy & Security.
+
+To build the DMG yourself on a Mac:
+
+```bash
+./scripts/make_dmg.sh        # test, build release .app, produce build/Pare-1.0.dmg
+```
+
 ## Why
 
 Raw exports from Word/PDF tools are full of repeated page headers, page numbers, image artifacts, link URLs, and redundant whitespace. Feeding that to an AI costs tokens on every request. Pare extracts the actual content and renders it as tight GFM (GitHub-Flavored Markdown).
@@ -68,6 +83,10 @@ swift test
 ```
 
 The suite (in `Tests/PareTests`) converts real fixture documents (committed under `Tests/PareTests/Fixtures`) and asserts heading/list/table structure, header/footer stripping behavior, cleaner options, renderer output, and ZIP decoding.
+
+### CI
+
+`.github/workflows/dmg.yml` runs the test suite on a macOS GitHub Actions runner, packages `build/Pare.app` into a DMG (via `scripts/make_dmg.sh`), uploads it as a workflow artifact, and attaches it to a GitHub Release on `v*` tags.
 
 ## Project layout
 
