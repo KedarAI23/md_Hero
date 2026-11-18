@@ -22,7 +22,7 @@ The first 2.0 beta focuses on a reliable installable macOS build and safer conve
 XLSX and PPTX are not supported in this beta. PDF OCR is a fallback for pages without an extractable text layer; it does not perform layout-aware OCR on mixed text-and-image pages.
 
 ### Beta conversion behaviour
-- Images and Markdown image placeholders are preserved by default.
+- The Markdown cleaner retains existing image placeholders by default; embedded image extraction from DOCX/PDF is not yet implemented.
 - OCR for scanned PDF pages is enabled by default and can be disabled in Options.
 - PDF page boundaries are retained as Markdown headings.
 - Each successful conversion writes a companion `.manifest.json` with source SHA-256, app version, conversion timestamp, options and heuristic statistics.
