@@ -84,7 +84,7 @@ enum ProseStructure {
     }
 
     static func orderedItem(in line: String) -> String? {
-        guard let match = line.firstRange(of: "^\\d{1,3}[.)]\\s+", options: .regularExpression) else {
+        guard let match = line.range(of: "^\\d{1,3}[.)]\\s+", options: .regularExpression) else {
             return nil
         }
         return String(line[match.upperBound...]).trimmingCharacters(in: .whitespaces)

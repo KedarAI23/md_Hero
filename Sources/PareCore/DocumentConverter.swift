@@ -9,26 +9,25 @@ public enum DocumentConverter {
         switch fileExtension(url) {
         case "docx":
             let data = try read(url)
-            return finalize(try DocxParser.parse(data: data), options: options)
+            return try finalize(try DocxParser.parse(data: data), options: options)
         case "odt":
             let data = try read(url)
-            return finalize(try OdtParser.parse(data: data), options: options)
+            return try finalize(try OdtParser.parse(data: data), options: options)
         case "pdf":
             let blocks = try PdfParser.parse(url: url, stripHeadersFooters: options.stripHeadersFooters)
-            return finalize(blocks, options: options)
+            return try finalize(blocks, options: options)
         case "rtf":
             let data = try read(url)
-            return finalize(try AttributedParser.parse(data: data, type: .rtf, baseURL: url.deletingLastPathComponent()), options: options)
+            return try finalize(try AttributedParser.parse(data: data, type: .rtf, baseURL: url.deletingLastPathComponent()), options: options)
         case "html", "htm":
             let data = try read(url)
-            return finalize(try AttributedParser.parse(data: data, type: .html, baseURL: url.deletingLastPathComponent()), options: options)
+            return try finalize(try AttributedParser.parse(data: data, type: .html, baseURL: url.deletingLastPathComponent()), options: options)
         case "txt", "text":
             let text = try String(contentsOf: url, encoding: .utf8)
-            return finalize(PlaintextParser.parse(text), options: options)
+            return try finalize(PlaintextParser.parse(text), options: options)
         case "md", "markdown":
-            let text = (try? String(contentsOf: url, encoding: .utf8))
-                ?? (try String(contentsOf: url, encoding: .isoLatin1))
-            return finalizePassThrough(text, options: options)
+            let text = try String(contentsOf: url, encoding: .utf8)
+            return try finalizePassThrough(text, options: options)
         default:
             throw ConversionError.unsupportedFormat(
                 "Unsupported format .\(fileExtension(url)). Supported: docx, odt, pdf, rtf, html, txt, md. Convert legacy .doc files to .docx first."

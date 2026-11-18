@@ -26,40 +26,38 @@ public enum AttributedParser {
             throw ConversionError.parseFailed("Could not interpret \(type == .rtf ? "RTF" : "HTML") content")
         }
 
-        let lines = attributed.string.components(separatedBy: .newlines)
-            .map { $0.trimmingCharacters(in: .whitespaces) }
         var blocks = Self.blocksWithFonts(from: attributed)
         if blocks.isEmpty {
+            let lines = attributed.string.components(separatedBy: .newlines)
+                .map { $0.trimmingCharacters(in: .whitespaces) }
             blocks = ProseStructure.linesToBlocks(lines)
         }
         return blocks
     }
 
     static func blocksWithFonts(from attributed: NSAttributedString) -> [MarkdownBlock] {
-        var blocks: [MarkdownBlock] = []
-        var paragraphRanges: [(range: NSRange, text: String)] = []
-        attributed.string.enumerateSubstrings(
-            in: NSRange(location: 0, length: attributed.length),
+        let source = attributed.string as NSString
+        guard source.length > 0 else { return [] }
+
+        var paragraphRanges: [NSRange] = []
+        source.enumerateSubstrings(
+            in: NSRange(location: 0, length: source.length),
             options: [.byParagraphs, .substringNotRequired]
         ) { _, range, _, _ in
-            paragraphRanges.append((range, ""))
+            paragraphRanges.append(range)
         }
 
-        var baseSize: CGFloat = 0
         var sizes: [CGFloat] = []
-        for (range, _) in paragraphRanges {
-            if range.location < attributed.length {
-                if let font = attributed.attribute(.font, at: range.location, effectiveRange: nil) as? NSFont {
-                    sizes.append(font.pointSize)
-                }
+        for range in paragraphRanges where range.location < attributed.length {
+            if let font = attributed.attribute(.font, at: range.location, effectiveRange: nil) as? NSFont {
+                sizes.append(font.pointSize)
             }
         }
-        if let median = sizes.sorted().first(where: { $0 > 8 }) {
-            baseSize = median
-        }
-        guard baseSize > 0 else { return [] }
+        guard let baseSize = sizes.sorted().first(where: { $0 > 8 }), baseSize > 0 else { return [] }
 
-        for (range, _) in paragraphRanges {
+        var blocks: [MarkdownBlock] = []
+        for range in paragraphRanges {
+            guard range.location < attributed.length else { continue }
             let text = attributed
                 .attributedSubstring(from: range)
                 .string

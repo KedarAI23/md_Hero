@@ -152,12 +152,12 @@ public enum DocxParser {
 
         private func finishParagraph() {
             if tableDepth > 0 {
-                cellText += collapseWhitespace(runText)
+                cellText += Self.collapseWhitespace(runText)
                 if !runText.isEmpty { cellText += " " }
                 runText = ""
                 return
             }
-            let text = collapseWhitespace(runText)
+            let text = Self.collapseWhitespace(runText)
             runText = ""
             guard !text.isEmpty else {
                 styleValue = ""
