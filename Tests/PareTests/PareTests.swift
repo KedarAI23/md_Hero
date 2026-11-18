@@ -79,12 +79,24 @@ final class PareTests: XCTestCase {
         XCTAssertTrue(result.markdown.contains("documentation"))
     }
 
-    func testPdfConversionStripsRepeatingPageFurniture() throws {
+    func testPdfConversionStripsRepeatingPageFurnitureAndPreservesPageMarkers() throws {
         let result = try convert("sample.pdf")
         XCTAssertFalse(result.markdown.contains("Confidential"))
-        XCTAssertFalse(result.markdown.range(of: "Page \\d", options: .regularExpression) != nil)
+        XCTAssertTrue(result.markdown.contains("## Page 1"))
         XCTAssertTrue(result.markdown.contains("Quarterly Report"))
         XCTAssertTrue(result.markdown.contains("enterprise renewals"))
+    }
+
+    func testPdfParserCanDisableOCR() throws {
+        let blocks = try PdfParser.parse(
+            url: fixtureURL("sample.pdf"),
+            stripHeadersFooters: true,
+            performOCR: false
+        )
+        XCTAssertTrue(blocks.contains {
+            if case .heading(level: 2, text: "Page 1") = $0 { return true }
+            return false
+        })
     }
 
     func testRendererProducesGfmTable() {
@@ -112,10 +124,18 @@ final class PareTests: XCTestCase {
         XCTAssertTrue(rendered.contains("1. third"))
     }
 
-    func testCleanerRemovesImagesAndCollapsesBlankLines() {
+    func testCleanerKeepsImagesByDefault() {
+        let cleaned = Cleaner.clean(
+            "Before\n\n![figure](figure.png)\n\nAfter",
+            options: ConvertOptions()
+        )
+        XCTAssertTrue(cleaned.contains("![figure](figure.png)"))
+    }
+
+    func testCleanerRemovesImagesOnlyWhenRequested() {
         let cleaned = Cleaner.clean(
             "Top\n\n![](x.png)\n\n\n\n\nBottom   \n",
-            options: ConvertOptions()
+            options: ConvertOptions(removeImages: true)
         )
         XCTAssertFalse(cleaned.contains("x.png"))
         XCTAssertFalse(cleaned.contains("\n\n\n"))
@@ -142,7 +162,7 @@ final class PareTests: XCTestCase {
         let result = try convert("notes.md")
         XCTAssertGreaterThan(result.stats.rawTokenEstimate, 0)
         XCTAssertGreaterThan(result.stats.markdownTokenEstimate, 0)
-        XCTAssertGreaterThan(result.stats.tokenSavingsPercent, 0)
+        XCTAssertGreaterThanOrEqual(result.stats.tokenSavingsPercent, 0)
 
         let pdf = try convert("sample.pdf")
         XCTAssertGreaterThanOrEqual(pdf.stats.tokenSavingsPercent, 0)
@@ -164,4 +184,44 @@ final class PareTests: XCTestCase {
         let text = String(data: xml ?? Data(), encoding: .utf8) ?? ""
         XCTAssertTrue(text.contains("Quarterly Financial Review"))
     }
+    func testConversionManifestIncludesSourceHashAndOptions() throws {
+        let source = fixtureURL("notes.md")
+        let markdown = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathComponent("notes.md")
+        try FileManager.default.createDirectory(
+            at: markdown.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        defer {
+            try? FileManager.default.removeItem(at: markdown.deletingLastPathComponent())
+        }
+
+        let result = try DocumentConverter.convert(url: source, options: ConvertOptions())
+        try DocumentConverter.writeManifest(
+            for: result,
+            sourceURL: source,
+            markdownURL: markdown,
+            options: ConvertOptions()
+        )
+
+        let manifestURL = markdown.deletingPathExtension().appendingPathExtension("manifest.json")
+        let data = try Data(contentsOf: manifestURL)
+        let json = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: data) as? [String: Any]
+        )
+        XCTAssertEqual(json["appVersion"] as? String, "2.0.0-beta.1")
+        XCTAssertEqual(json["sourceFilename"] as? String, "notes.md")
+        XCTAssertNotNil(json["sourceSHA256"] as? String)
+        XCTAssertEqual(json["markdownFilename"] as? String, "notes.md")
+        let options = try XCTUnwrap(json["options"] as? [String: Any])
+        XCTAssertEqual(options["removeImages"] as? Bool, false)
+        XCTAssertEqual(options["performOCR"] as? Bool, true)
+    }
+
+    func testImageRemovalIsOptIn() {
+        XCTAssertFalse(ConvertOptions().removeImages)
+        XCTAssertTrue(ConvertOptions(removeImages: true).removeImages)
+    }
+
 }

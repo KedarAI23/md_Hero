@@ -9,6 +9,7 @@ final class QueueModel: ObservableObject {
         var status: Status = .queued
         var result: ConversionResult?
         var outputURL: URL?
+        var manifestURL: URL?
         var errorMessage: String?
 
         enum Status: Equatable {
@@ -74,12 +75,20 @@ final class QueueModel: ObservableObject {
                         existingNames: writtenNames
                     )
                     try DocumentConverter.write(result, to: target)
+                    try DocumentConverter.writeManifest(
+                        for: result,
+                        sourceURL: url,
+                        markdownURL: target,
+                        options: options
+                    )
                     writtenNames.insert(target.lastPathComponent)
+                    let manifestURL = target.deletingPathExtension().appendingPathExtension("manifest.json")
                     await MainActor.run {
                         self.set(id: id) {
                             $0.status = .done
                             $0.result = result
                             $0.outputURL = target
+                            $0.manifestURL = manifestURL
                         }
                     }
                 } catch {

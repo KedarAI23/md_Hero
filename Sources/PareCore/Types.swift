@@ -10,26 +10,29 @@ public enum MarkdownBlock: Equatable, Sendable {
     case divider
 }
 
-public struct ConvertOptions: Sendable, Equatable {
+public struct ConvertOptions: Sendable, Equatable, Codable {
     public var stripHeadersFooters: Bool
     public var removeImages: Bool
     public var removeLinkURLs: Bool
     public var compactWhitespace: Bool
+    public var performOCR: Bool
 
     public init(
         stripHeadersFooters: Bool = true,
-        removeImages: Bool = true,
+        removeImages: Bool = false,
         removeLinkURLs: Bool = false,
-        compactWhitespace: Bool = true
+        compactWhitespace: Bool = true,
+        performOCR: Bool = true
     ) {
         self.stripHeadersFooters = stripHeadersFooters
         self.removeImages = removeImages
         self.removeLinkURLs = removeLinkURLs
         self.compactWhitespace = compactWhitespace
+        self.performOCR = performOCR
     }
 }
 
-public struct ConversionStats: Sendable, Equatable {
+public struct ConversionStats: Sendable, Equatable, Codable {
     public let rawCharacterCount: Int
     public let markdownCharacterCount: Int
     public let wordCount: Int

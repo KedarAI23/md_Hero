@@ -46,6 +46,9 @@ struct ContentView: View {
                     .font(.title.weight(.semibold))
                 Text("Documents in. Clean, token-light Markdown out.")
                     .foregroundStyle(.secondary)
+                Text("2.0.0 Beta · Local processing")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
             Spacer()
             Button("Choose Files…") { showFileImporter = true }
@@ -57,7 +60,7 @@ struct ContentView: View {
             Image(systemName: "tray.and.arrow.down")
                 .font(.system(size: 28))
                 .foregroundStyle(isDropTargeted ? Color.accentColor : Color.secondary)
-            Text("Drop DOCX, PDF, ODT, RTF, HTML or TXT files here")
+            Text("Drop DOCX, PDF, ODT, RTF, HTML, TXT or Markdown files here")
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
@@ -131,9 +134,10 @@ struct ContentView: View {
     private var optionsPanel: some View {
         VStack(alignment: .leading, spacing: 6) {
             Toggle("Strip repeated headers, footers and page numbers", isOn: $model.options.stripHeadersFooters)
-            Toggle("Remove image placeholders", isOn: $model.options.removeImages)
+            Toggle("Remove image placeholders (off by default)", isOn: $model.options.removeImages)
             Toggle("Strip link URLs, keep link text", isOn: $model.options.removeLinkURLs)
             Toggle("Compact blank lines and whitespace", isOn: $model.options.compactWhitespace)
+            Toggle("OCR scanned PDF pages using Apple Vision", isOn: $model.options.performOCR)
         }
         .font(.callout)
         .padding(10)
@@ -208,6 +212,10 @@ struct ContentView: View {
                 Text("−\(result.stats.tokenSavingsPercent)% vs raw text")
                     .foregroundStyle(.green)
             }
+            if item.manifestURL != nil {
+                Text("· manifest saved")
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 
@@ -233,7 +241,7 @@ struct ContentView: View {
         HStack(spacing: 14) {
             let done = model.doneItems
             if done.isEmpty {
-                Text(model.outputFolder == nil ? "Markdown files are written next to each source file." : "Output folder: \(model.outputFolder!.path)")
+                Text(model.outputFolder == nil ? "Markdown and manifest files are written next to each source file." : "Output folder: \(model.outputFolder!.path)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } else {
