@@ -106,4 +106,3 @@ Sources/PareCore      conversion engine (no UI dependency except PDFKit/AppKit f
 Sources/Pare          SwiftUI app (window, drop zone, queue, options, stats)
 Tests/PareTests       XCTest suite + fixtures
 ```
->>>>>>> 499ae3c
