@@ -42,7 +42,7 @@ struct ContentView: View {
     private var header: some View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("Pare")
+                Text("md_Hero")
                     .font(.title.weight(.semibold))
                 Text("Documents in. Clean, token-light Markdown out.")
                     .foregroundStyle(.secondary)

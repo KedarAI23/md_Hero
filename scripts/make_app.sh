@@ -6,10 +6,10 @@ CONFIGURATION="${1:-release}"
 swift build -c "$CONFIGURATION"
 
 BINARY=".build/$CONFIGURATION/Pare"
-APP="build/Pare.app"
+APP="build/md_Hero.app"
 
 mkdir -p "$APP/Contents/MacOS"
-cp "$BINARY" "$APP/Contents/MacOS/Pare"
+cp "$BINARY" "$APP/Contents/MacOS/md_Hero"
 
 cat > "$APP/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -17,11 +17,11 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 <plist version="1.0">
 <dict>
     <key>CFBundleName</key>
-    <string>Pare</string>
+    <string>md_Hero</string>
     <key>CFBundleDisplayName</key>
-    <string>Pare</string>
+    <string>md_Hero</string>
     <key>CFBundleIdentifier</key>
-    <string>com.pare.app</string>
+    <string>com.mdhero.app</string>
     <key>CFBundleVersion</key>
     <string>1.0</string>
     <key>CFBundleShortVersionString</key>
@@ -29,7 +29,7 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleExecutable</key>
-    <string>Pare</string>
+    <string>md_Hero</string>
     <key>LSMinimumSystemVersion</key>
     <string>13.0</string>
     <key>NSPrincipalClass</key>

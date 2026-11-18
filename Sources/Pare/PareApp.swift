@@ -15,7 +15,7 @@ struct PareApp: App {
     }()
 
     var body: some Scene {
-        WindowGroup("Pare") {
+        WindowGroup("md_Hero") {
             ContentView()
                 .frame(minWidth: 640, minHeight: 520)
         }
