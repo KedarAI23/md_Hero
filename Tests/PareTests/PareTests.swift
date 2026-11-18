@@ -184,4 +184,44 @@ final class PareTests: XCTestCase {
         let text = String(data: xml ?? Data(), encoding: .utf8) ?? ""
         XCTAssertTrue(text.contains("Quarterly Financial Review"))
     }
+    func testConversionManifestIncludesSourceHashAndOptions() throws {
+        let source = fixtureURL("notes.md")
+        let markdown = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathComponent("notes.md")
+        try FileManager.default.createDirectory(
+            at: markdown.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        defer {
+            try? FileManager.default.removeItem(at: markdown.deletingLastPathComponent())
+        }
+
+        let result = try DocumentConverter.convert(url: source, options: ConvertOptions())
+        try DocumentConverter.writeManifest(
+            for: result,
+            sourceURL: source,
+            markdownURL: markdown,
+            options: ConvertOptions()
+        )
+
+        let manifestURL = markdown.deletingPathExtension().appendingPathExtension("manifest.json")
+        let data = try Data(contentsOf: manifestURL)
+        let json = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: data) as? [String: Any]
+        )
+        XCTAssertEqual(json["appVersion"] as? String, "2.0.0-beta.1")
+        XCTAssertEqual(json["sourceFilename"] as? String, "notes.md")
+        XCTAssertNotNil(json["sourceSHA256"] as? String)
+        XCTAssertEqual(json["markdownFilename"] as? String, "notes.md")
+        let options = try XCTUnwrap(json["options"] as? [String: Any])
+        XCTAssertEqual(options["removeImages"] as? Bool, false)
+        XCTAssertEqual(options["performOCR"] as? Bool, true)
+    }
+
+    func testImageRemovalIsOptIn() {
+        XCTAssertFalse(ConvertOptions().removeImages)
+        XCTAssertTrue(ConvertOptions(removeImages: true).removeImages)
+    }
+
 }
