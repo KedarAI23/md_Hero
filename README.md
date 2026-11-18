@@ -1,10 +1,8 @@
-<<<<<<< HEAD
 # md_Hero
-Converts input docs to md for LLMs : conserves tokens with sacrificing any information
-=======
-# Pare
 
-A native macOS app (SwiftUI) that converts documents into clean, token-light Markdown, ready to paste or upload to LLMs.
+Converts input docs to md for LLMs — conserves tokens without sacrificing any information.
+
+A native macOS app (SwiftUI) that turns documents into clean, token-light Markdown, ready to paste or upload to AI models.
 
 **Documents in → Markdown out, with as few wasted tokens as possible.**
 
@@ -12,20 +10,20 @@ A native macOS app (SwiftUI) that converts documents into clean, token-light Mar
 
 The easiest way to beta test is the prebuilt DMG from CI:
 
-1. Open the repo's **Actions → Build DMG** run (or the latest **Releases** page) and download `Pare-1.0.dmg`.
+1. Open the repo's **Actions → Build DMG** run (or the latest **Releases** page) and download `md_Hero-1.0.dmg`.
    - On a tag push (`v*`) the DMG is attached to a GitHub Release automatically; any manual run (**workflow_dispatch**) also publishes it as a downloadable build artifact.
-2. Open the DMG and drag **Pare.app** to the **Applications** shortcut inside it.
+2. Open the DMG and drag **md_Hero.app** to the **Applications** shortcut inside it.
 3. First launch: the app is ad-hoc signed, so macOS Gatekeeper may ask for confirmation — right-click the app and choose **Open** once, or allow it in System Settings → Privacy & Security.
 
 To build the DMG yourself on a Mac:
 
 ```bash
-./scripts/make_dmg.sh        # test, build release .app, produce build/Pare-1.0.dmg
+./scripts/make_dmg.sh        # test, build release .app, produce build/md_Hero-1.0.dmg
 ```
 
 ## Why
 
-Raw exports from Word/PDF tools are full of repeated page headers, page numbers, image artifacts, link URLs, and redundant whitespace. Feeding that to an AI costs tokens on every request. Pare extracts the actual content and renders it as tight GFM (GitHub-Flavored Markdown).
+Raw exports from Word/PDF tools are full of repeated page headers, page numbers, image artifacts, link URLs, and redundant whitespace. Feeding that to an AI costs tokens on every request. md_Hero extracts the actual content and renders it as tight GFM (GitHub-Flavored Markdown).
 
 ## Supported formats
 
@@ -56,11 +54,11 @@ Requirements: macOS 13+ and Xcode 14+ (or the Xcode Command Line Tools).
 
 ### Xcode
 
-Open `Package.swift` in Xcode (`File → Open…`), select the `Pare` scheme, and run. Distribution / drag-and-drop workflows are smoother with a bundled app:
+Open `Package.swift` in Xcode (`File → Open…`), select the `Pare` scheme (the executable product), and run. Distribution / drag-and-drop workflows are smoother with a bundled app:
 
 ```bash
-./scripts/make_app.sh        # builds and assembles build/Pare.app (release)
-open build/Pare.app
+./scripts/make_app.sh        # builds and assembles build/md_Hero.app (release)
+open build/md_Hero.app
 ```
 
 The script compiles with SwiftPM and wraps the executable in a minimal, ad-hoc signed `.app` bundle — no Xcode project file required. If you prefer an `.xcodeproj`, install [XcodeGen](https://github.com/yonaskolb/XcodeGen) and run `xcodegen` against this package.
@@ -90,7 +88,7 @@ The suite (in `Tests/PareTests`) converts real fixture documents (committed unde
 
 ### CI
 
-`.github/workflows/dmg.yml` runs the test suite on a macOS GitHub Actions runner, packages `build/Pare.app` into a DMG (via `scripts/make_dmg.sh`), uploads it as a workflow artifact, and attaches it to a GitHub Release on `v*` tags.
+`.github/workflows/dmg.yml` runs the test suite on a macOS GitHub Actions runner, packages `build/md_Hero.app` into a DMG (via `scripts/make_dmg.sh`), uploads it as a workflow artifact, and attaches it to a GitHub Release on `v*` tags.
 
 ## Project layout
 
